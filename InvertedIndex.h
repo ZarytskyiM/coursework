@@ -14,7 +14,6 @@ private:
 public:
     void add_document(int doc_id, const std::string& content);
     std::vector<int> search(const std::string& word) const;
-    void print_index() const;
 };
 
 #endif

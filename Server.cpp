@@ -5,10 +5,14 @@
 #include <iostream>
 #include <sstream>
 #include <functional> 
+#include <atomic>
+#include <chrono>
 
 #pragma comment(lib, "Ws2_32.lib")
 
 #define BUFFER_SIZE 1024
+std::atomic<int> files_added(0); 
+std::atomic<long long> total_time(0);
 
 void handle_client(SOCKET client_socket, InvertedIndex& index) {
     char buffer[BUFFER_SIZE] = { 0 };
@@ -36,7 +40,18 @@ void handle_client(SOCKET client_socket, InvertedIndex& index) {
             std::string content;
             std::getline(iss, content);
             static int doc_id = 1;
+            auto start = std::chrono::high_resolution_clock::now();
             index.add_document(doc_id++, content);
+            auto end = std::chrono::high_resolution_clock::now();
+
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            total_time += duration.count();
+            files_added++;
+
+            if (files_added % 50 == 0) {
+                std::cout << "Files added: " << files_added.load()
+                << " Total time: " << total_time.load() << " ms. " << std::endl;
+            }
             std::string response = "File added to index.\n";
             send(client_socket, response.c_str(), response.size(), 0);
         }
@@ -96,7 +111,7 @@ void Server::start_server(const std::string& address, int port, InvertedIndex& i
     std::cout << "Server listening on " << address << ":" << port << "...\n";
 
  
-    ThreadPool pool(4); 
+    ThreadPool pool(1); 
 
     while (true) {
         SOCKET client_socket = accept(listen_socket, nullptr, nullptr);

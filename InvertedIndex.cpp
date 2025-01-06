@@ -28,15 +28,3 @@ std::vector<int> InvertedIndex::search(const std::string& word) const {
     return {};
 }
 
-void InvertedIndex::print_index() const {
-    std::shared_lock<std::shared_mutex> lock(rw_lock);
-    for (const auto& pair : index) {
-        const auto& word = pair.first;
-        const auto& doc_ids = pair.second;
-        std::cout << word << ": ";
-        for (int id : doc_ids) {
-            std::cout << id << " ";
-        }
-        std::cout << std::endl;
-    }
-}
